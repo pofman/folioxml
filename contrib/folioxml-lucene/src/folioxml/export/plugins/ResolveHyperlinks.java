@@ -40,7 +40,8 @@ public class ResolveHyperlinks implements InfobaseSetPlugin {
 
     private DynamicAnalyzer loadAnalyzerFromLucene(InfobaseConfig ic) throws IOException, InvalidMarkupException {
         BooleanQuery.Builder q = new BooleanQuery.Builder();
-        q.add(new TermQuery(new Term("infobase", ic.getId())), BooleanClause.Occur.MUST);
+		q.add(new TermQuery(new Term("infobase", ic.getId())), BooleanClause.Occur.SHOULD);
+        q.add(new TermQuery(new Term("infobaseId", ic.getId())), BooleanClause.Occur.SHOULD);
         q.add(new TermQuery(new Term("level", "root")), BooleanClause.Occur.MUST);
         ScoreDoc[] hits = searcher.search(q.build(), 1).scoreDocs;
         if (hits.length > 0) {
@@ -77,10 +78,13 @@ public class ResolveHyperlinks implements InfobaseSetPlugin {
         resolve_query_links = set.getBool("resolve_query_links");
         if (resolve_query_links == null) resolve_query_links = true;
 
+		System.out.println("Resolve Jump Links: " + resolve_jump_links);
+		System.out.println("Resolve Query Links: " + resolve_query_links);
 
         Path index = export.getLocalPath("lucene_index", AssetType.LuceneIndex, FolderCreation.None);
 
         if (java.nio.file.Files.isDirectory(index)) {
+			System.out.println("Index directory file: " + index);
             searcher = new IndexSearcher(DirectoryReader.open(FSDirectory.open(index)));
             //Load and parse all infobase root nodes
             //query infoabse="x" && level="root", then load and parse slx to load the query resolver.
@@ -267,7 +271,8 @@ public class ResolveHyperlinks implements InfobaseSetPlugin {
         }
 
         BooleanQuery.Builder qb = new BooleanQuery.Builder();
-        qb.add(new TermQuery(new Term("infobase", targetConfig.getId())), BooleanClause.Occur.MUST);
+        qb.add(new TermQuery(new Term("infobase", targetConfig.getId())), BooleanClause.Occur.SHOULD);
+		qb.add(new TermQuery(new Term("infobaseId", targetConfig.getId())), BooleanClause.Occur.SHOULD);
         qb.add(new TermQuery(new Term("destinations", jumpDestination)), BooleanClause.Occur.MUST);
         ScoreDoc[] hits = searcher.search(qb.build(), 1).scoreDocs;
         if (hits.length > 0) {
